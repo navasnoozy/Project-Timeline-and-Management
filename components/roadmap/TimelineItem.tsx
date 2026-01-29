@@ -144,7 +144,7 @@ export const TimelineItem = ({ item, index, isLeft, onUpdateDeliverables, onUpda
               {item.description}
             </Text>
 
-            <DeliverablesList deliverables={item.deliverables} onUpdate={handleDeliverablesUpdate} isExpanded={isExpanded} onToggleExpand={onToggleExpand} />
+            <DeliverablesList deliverables={item.deliverables} onUpdate={handleDeliverablesUpdate} isExpanded={isExpanded} onToggleExpand={onToggleExpand} isEditable={isLoggedIn} />
           </Card.Body>
         </Card.Root>
       </MotionBox>

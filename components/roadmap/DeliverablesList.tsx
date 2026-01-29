@@ -13,9 +13,10 @@ interface DeliverablesListProps {
   onUpdate: (deliverables: Deliverable[]) => void;
   isExpanded: boolean;
   onToggleExpand: () => void;
+  isEditable?: boolean;
 }
 
-export const DeliverablesList = ({ deliverables, onUpdate, isExpanded, onToggleExpand }: DeliverablesListProps) => {
+export const DeliverablesList = ({ deliverables, onUpdate, isExpanded, onToggleExpand, isEditable = false }: DeliverablesListProps) => {
   const [newDeliverable, setNewDeliverable] = useState("");
   const [isAdding, setIsAdding] = useState(false);
 
@@ -48,14 +49,16 @@ export const DeliverablesList = ({ deliverables, onUpdate, isExpanded, onToggleE
       status: "Not Started",
       startDate: nextStartDate,
       durationDays: 7,
+      excludeHolidays: true,
+      excludeSaturdays: false,
     };
     onUpdate([...deliverables, newItem]);
     setNewDeliverable("");
     setIsAdding(false);
   };
 
-  const handleDurationUpdate = (id: string, startDate: string, durationDays: number) => {
-    const updated = deliverables.map((d) => (d.id === id ? { ...d, startDate, durationDays } : d));
+  const handleDurationUpdate = (id: string, startDate: string, durationDays: number, options?: { excludeHolidays?: boolean; excludeSaturdays?: boolean }) => {
+    const updated = deliverables.map((d) => (d.id === id ? { ...d, startDate, durationDays, ...options } : d));
     onUpdate(updated);
   };
 
@@ -82,7 +85,7 @@ export const DeliverablesList = ({ deliverables, onUpdate, isExpanded, onToggleE
               {completedCount}/{deliverables.length}
             </Badge>
           )}
-          {!isAdding && (
+          {isEditable && !isAdding && (
             <IconButton aria-label="Add deliverable" size="xs" variant="ghost" colorPalette="blue" onClick={() => setIsAdding(true)}>
               <Plus size={14} />
             </IconButton>
@@ -113,15 +116,22 @@ export const DeliverablesList = ({ deliverables, onUpdate, isExpanded, onToggleE
                   <Text fontSize="xs" fontWeight="medium" flex={1} textDecoration={d.status === "Completed" ? "line-through" : "none"} color={d.status === "Completed" ? "gray.400" : "gray.700"}>
                     {d.text}
                   </Text>
-                  <IconButton className="delete-btn" aria-label="Delete deliverable" size="xs" variant="ghost" colorPalette="red" onClick={() => handleDelete(d.id)}>
-                    <Trash2 size={12} />
-                  </IconButton>
+                  {isEditable && (
+                    <IconButton className="delete-btn" aria-label="Delete deliverable" size="xs" variant="ghost" colorPalette="red" onClick={() => handleDelete(d.id)}>
+                      <Trash2 size={12} />
+                    </IconButton>
+                  )}
                 </Flex>
 
                 {/* Row 2: Status + Duration */}
                 <Flex justify="space-between" align="center" mt={1.5} flexWrap="wrap" gap={1}>
-                  <StatusBadge status={d.status} onStatusChange={(status) => handleStatusChange(d.id, status)} />
-                  <DeliverableDuration deliverable={d} allDeliverables={deliverables} onUpdate={(startDate, durationDays) => handleDurationUpdate(d.id, startDate, durationDays)} />
+                  <StatusBadge status={d.status} onStatusChange={(status) => isEditable && handleStatusChange(d.id, status)} />
+                  <DeliverableDuration
+                    deliverable={d}
+                    allDeliverables={deliverables}
+                    onUpdate={(startDate, durationDays, options) => handleDurationUpdate(d.id, startDate, durationDays, options)}
+                    isEditable={isEditable}
+                  />
                 </Flex>
               </Box>
             </motion.div>

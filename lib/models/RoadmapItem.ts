@@ -14,6 +14,10 @@ const DeliverableSchema = new Schema({
   },
   startDate: { type: String, required: true }, // ISO Date string
   durationDays: { type: Number, required: true },
+  excludeHolidays: { type: Boolean, default: true },
+  excludeSaturdays: { type: Boolean, default: false },
+  excludeSundays: { type: Boolean, default: false },
+  excludeBankHolidays: { type: Boolean, default: true },
 });
 
 // RoadmapItem Interface
