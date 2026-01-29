@@ -17,3 +17,5 @@ Before every implementation, the following instructions must be followed:
 8. The project has rebust error handling system, you must follow it
 
 9 The project has rebust authentication system, you must follow it
+
+10 . The Motion.dev library has undergone several updates, including both breaking and minor changes compared to previous versions. Please conduct thorough research using multiple queries, and carefully analyze the results.
