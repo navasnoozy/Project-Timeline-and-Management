@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, Badge, Box } from "@chakra-ui/react";
+import { Menu, Badge, Box, Portal } from "@chakra-ui/react";
 import { ChevronDown } from "lucide-react";
 import { TaskStatus, TASK_STATUSES } from "./data";
 
@@ -52,17 +52,26 @@ export const StatusBadge = ({ status, onStatusChange }: StatusBadgeProps) => {
           </Badge>
         </Box>
       </Menu.Trigger>
-      <Menu.Positioner>
-        <Menu.Content minW="160px" borderRadius="lg" boxShadow="lg">
-          {TASK_STATUSES.map((s) => (
-            <Menu.Item key={s} value={s} onClick={() => onStatusChange(s)} fontWeight={s === status ? "bold" : "normal"} bg={s === status ? `${getStatusColor(s)}.50` : "transparent"}>
-              <Badge colorPalette={getStatusColor(s)} variant="subtle" size="sm">
-                {s}
-              </Badge>
-            </Menu.Item>
-          ))}
-        </Menu.Content>
-      </Menu.Positioner>
+      <Portal>
+        <Menu.Positioner zIndex="popover">
+          <Menu.Content minW="160px" borderRadius="lg" boxShadow="lg">
+            {TASK_STATUSES.map((s) => (
+              <Menu.Item
+                key={s}
+                value={s}
+                onClick={() => onStatusChange(s)}
+                fontWeight={s === status ? "bold" : "normal"}
+                bg={s === status ? `${getStatusColor(s)}.50` : "transparent"}
+                cursor="pointer"
+              >
+                <Badge colorPalette={getStatusColor(s)} variant="subtle" size="sm">
+                  {s}
+                </Badge>
+              </Menu.Item>
+            ))}
+          </Menu.Content>
+        </Menu.Positioner>
+      </Portal>
     </Menu.Root>
   );
 };

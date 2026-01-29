@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+mustfollowinstructions.txt
+mustfollowinstructions
+.mustfollowinstructions.txt
+.mustfollowinstructions
+mustfollowinstructions.txt/*
+mustfollowinstructions/*

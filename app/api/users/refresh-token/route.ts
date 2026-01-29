@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import db from "@/lib/db";
-import { Session } from "@/lib/models/Session";
+import { Session } from "@/lib/models";
 import { cookieOptions } from "@/lib/config/cookieOptions";
 import { ACCESS_TOKEN_EXPIRY, REFRESH_TOKEN_EXPIRY, REFRESH_TOKEN_EXPIRY_MS } from "@/lib/config/tokenConfig";
 import { NotAuthorizedError } from "@/lib/errors/NotAuthorizedError";

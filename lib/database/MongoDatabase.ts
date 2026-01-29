@@ -14,6 +14,11 @@ export class MongoDatabase implements IDatabase {
         return;
       }
       const conn = await mongoose.connect(this.connectionString);
+
+      // Import model registry to ensure all schemas are registered
+      // This must happen after connection is established
+      await import("@/lib/models");
+
       console.log(`MongoDB Connected: ${conn.connection.host}`);
     } catch (error) {
       console.error("MongoDB connection Error", error);
