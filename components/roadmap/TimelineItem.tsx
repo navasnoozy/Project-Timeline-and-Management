@@ -181,7 +181,15 @@ export const TimelineItem = ({ item, index, isLeft, onUpdateDeliverables, onUpda
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={handleDelete}
         title="Delete Card"
-        message={`Are you sure you want to delete **${item.title}**? This action cannot be undone.`}
+        message={
+          <>
+            Are you sure you want to delete{" "}
+            <Text as="span" fontWeight="bold">
+              {item.title}
+            </Text>
+            ? This action cannot be undone.
+          </>
+        }
         confirmText="Delete"
         confirmColorPalette="red"
       />
