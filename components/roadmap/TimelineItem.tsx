@@ -123,8 +123,7 @@ export const TimelineItem = ({ item, index, isLeft, onUpdateDeliverables, onUpda
             transition={{ duration: 0.25 }}
             style={{
               position: "absolute",
-              top: "50%",
-              transform: "translateY(-50%)",
+              top: "0",
               left: isLeft ? "53%" : "auto",
               right: isLeft ? "auto" : "53%",
               zIndex: 15,

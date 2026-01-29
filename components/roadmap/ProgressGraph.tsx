@@ -1,158 +1,182 @@
 "use client";
 
 import { Box, Flex, Text } from "@chakra-ui/react";
-import { Deliverable, TaskStatus, computeCardDuration, getStatusCounts, TASK_STATUSES } from "./data";
-import { differenceInDays, parseISO } from "date-fns";
-import { Check, Clock, AlertTriangle, Pause, Search } from "lucide-react";
+import { Deliverable, TaskStatus, getStatusCounts, TASK_STATUSES } from "./data";
 
 interface ProgressGraphProps {
   deliverables: Deliverable[];
   status: TaskStatus;
 }
 
-// Get color based on status
-const getStatusColor = (status: TaskStatus) => {
-  switch (status) {
-    case "Completed":
-      return { main: "#22c55e", light: "#dcfce7", track: "#bbf7d0" };
-    case "Implementing":
-      return { main: "#3b82f6", light: "#dbeafe", track: "#bfdbfe" };
-    case "Planning & Research":
-      return { main: "#a855f7", light: "#f3e8ff", track: "#e9d5ff" };
-    case "On Hold":
-      return { main: "#f97316", light: "#ffedd5", track: "#fed7aa" };
-    case "Not Started":
-    default:
-      return { main: "#6b7280", light: "#f3f4f6", track: "#e5e7eb" };
-  }
+// Premium status colors
+const STATUS_COLORS: Record<TaskStatus, { main: string; bg: string }> = {
+  Completed: { main: "#10b981", bg: "#d1fae5" },
+  Implementing: { main: "#3b82f6", bg: "#dbeafe" },
+  "Planning & Research": { main: "#8b5cf6", bg: "#ede9fe" },
+  "On Hold": { main: "#f59e0b", bg: "#fef3c7" },
+  "Not Started": { main: "#6b7280", bg: "#f3f4f6" },
 };
 
-// Get status icon
-const getStatusIcon = (status: TaskStatus, size = 14) => {
-  switch (status) {
-    case "Completed":
-      return <Check size={size} />;
-    case "Implementing":
-      return <Clock size={size} />;
-    case "On Hold":
-      return <Pause size={size} />;
-    case "Planning & Research":
-      return <Search size={size} />;
-    default:
-      return <AlertTriangle size={size} />;
-  }
+// Polar to Cartesian conversion
+const polarToCartesian = (cx: number, cy: number, radius: number, angleInDegrees: number) => {
+  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+  return {
+    x: cx + radius * Math.cos(angleInRadians),
+    y: cy + radius * Math.sin(angleInRadians),
+  };
 };
 
-export const ProgressGraph = ({ deliverables, status }: ProgressGraphProps) => {
+// Create SVG arc path (filled wedge)
+const createArcPath = (cx: number, cy: number, innerR: number, outerR: number, startAngle: number, endAngle: number): string => {
+  const innerStart = polarToCartesian(cx, cy, innerR, endAngle);
+  const innerEnd = polarToCartesian(cx, cy, innerR, startAngle);
+  const outerStart = polarToCartesian(cx, cy, outerR, endAngle);
+  const outerEnd = polarToCartesian(cx, cy, outerR, startAngle);
+  const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+
+  return [
+    `M ${outerStart.x} ${outerStart.y}`,
+    `A ${outerR} ${outerR} 0 ${largeArc} 0 ${outerEnd.x} ${outerEnd.y}`,
+    `L ${innerEnd.x} ${innerEnd.y}`,
+    `A ${innerR} ${innerR} 0 ${largeArc} 1 ${innerStart.x} ${innerStart.y}`,
+    "Z",
+  ].join(" ");
+};
+
+export const ProgressGraph = ({ deliverables }: ProgressGraphProps) => {
   const totalTasks = deliverables.length;
   const statusCounts = getStatusCounts(deliverables);
-  const completedTasks = statusCounts["Completed"];
-  const completionPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const completedCount = statusCounts["Completed"];
+  const completionPercent = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
 
-  // Calculate time progress
-  const duration = computeCardDuration(deliverables);
-  const today = new Date();
-  let timeProgress = 0;
-  let daysElapsed = 0;
-  let totalDays = 0;
+  // Build segments data
+  const segments: { status: TaskStatus; count: number; percent: number }[] = [];
+  TASK_STATUSES.forEach((s) => {
+    const count = statusCounts[s];
+    if (count > 0) {
+      segments.push({
+        status: s,
+        count,
+        percent: Math.round((count / totalTasks) * 100),
+      });
+    }
+  });
 
-  if (duration) {
-    const startDate = parseISO(duration.startDate);
-    totalDays = duration.durationDays;
-    daysElapsed = Math.max(0, differenceInDays(today, startDate));
-    timeProgress = totalDays > 0 ? Math.min(100, Math.round((daysElapsed / totalDays) * 100)) : 0;
+  // Empty state
+  if (segments.length === 0) {
+    return (
+      <Flex direction="column" align="center" justify="center" h="150px">
+        <Text fontSize="sm" color="gray.400">
+          No deliverables
+        </Text>
+      </Flex>
+    );
   }
 
-  const colors = getStatusColor(status);
+  // Larger chart dimensions
+  const size = 160;
+  const cx = size / 2;
+  const cy = size / 2;
+  const outerRadius = 72;
+  const innerRadius = 44;
+  const gapAngle = 3;
 
-  // SVG circular progress
-  const size = 64;
-  const strokeWidth = 6;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const progressOffset = circumference - (completionPercent / 100) * circumference;
+  // Calculate arc data
+  let currentAngle = 0;
+  const arcs = segments.map((seg) => {
+    const segmentAngle = (seg.percent / 100) * 360;
+    const adjustedAngle = Math.max(segmentAngle - gapAngle, 2);
+    const startAngle = currentAngle + gapAngle / 2;
+    const endAngle = startAngle + adjustedAngle;
+    currentAngle += segmentAngle;
+
+    const midAngle = (startAngle + endAngle) / 2;
+    const labelRadius = (innerRadius + outerRadius) / 2;
+    const labelPos = polarToCartesian(cx, cy, labelRadius, midAngle);
+
+    return {
+      ...seg,
+      startAngle,
+      endAngle,
+      path: createArcPath(cx, cy, innerRadius, outerRadius, startAngle, endAngle),
+      labelPos,
+    };
+  });
 
   return (
-    <Box bg="rgba(255, 255, 255, 0.95)" backdropFilter="blur(10px)" borderRadius="xl" boxShadow="lg" p={3} minW="150px" borderWidth="1px" borderColor="gray.200">
-      <Flex direction="column" align="center" gap={2}>
-        {/* Circular Progress */}
-        <Box position="relative">
-          <svg width={size} height={size}>
-            <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={colors.track} strokeWidth={strokeWidth} />
-            <circle
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              fill="none"
-              stroke={colors.main}
-              strokeWidth={strokeWidth}
-              strokeLinecap="round"
-              strokeDasharray={circumference}
-              strokeDashoffset={progressOffset}
-              transform={`rotate(-90 ${size / 2} ${size / 2})`}
-              style={{ transition: "stroke-dashoffset 0.5s ease" }}
-            />
-          </svg>
-          <Flex position="absolute" top="50%" left="50%" transform="translate(-50%, -50%)" direction="column" align="center">
-            <Text fontSize="md" fontWeight="bold" color={colors.main}>
-              {completionPercent}%
-            </Text>
-          </Flex>
-        </Box>
+    <Flex direction="column" align="center" gap={3}>
+      {/* Donut Chart - Free floating, no card */}
+      <Box position="relative" width={`${size}px`} height={`${size}px`}>
+        <svg
+          width={size}
+          height={size}
+          style={{
+            overflow: "visible",
+            filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.15))",
+          }}
+        >
+          {arcs.map((arc) => (
+            <path key={arc.status} d={arc.path} fill={STATUS_COLORS[arc.status].main} style={{ transition: "opacity 0.2s" }} />
+          ))}
+        </svg>
 
-        {/* Status Breakdown */}
-        <Box w="full">
-          <Text fontSize="xs" fontWeight="bold" color="gray.500" mb={2}>
-            Status Breakdown
+        {/* Center - Completion % */}
+        <Flex
+          position="absolute"
+          top="50%"
+          left="50%"
+          transform="translate(-50%, -50%)"
+          direction="column"
+          align="center"
+          justify="center"
+          w={`${innerRadius * 2 - 6}px`}
+          h={`${innerRadius * 2 - 6}px`}
+          borderRadius="full"
+          bg="white"
+          boxShadow="inset 0 2px 8px rgba(0,0,0,0.06)"
+        >
+          <Text fontSize="2xl" fontWeight="bold" color="gray.800" lineHeight="1">
+            {completionPercent}%
           </Text>
-          <Flex direction="column" gap={1}>
-            {TASK_STATUSES.map((s) => {
-              const count = statusCounts[s];
-              if (count === 0) return null;
-              const statusColors = getStatusColor(s);
-              return (
-                <Flex key={s} align="center" gap={2} fontSize="xs">
-                  <Box color={statusColors.main}>{getStatusIcon(s, 12)}</Box>
-                  <Text flex={1} color="gray.600">
-                    {s}
-                  </Text>
-                  <Text fontWeight="bold" color={statusColors.main}>
-                    {count}
-                  </Text>
-                </Flex>
-              );
-            })}
-          </Flex>
-        </Box>
-
-        {/* Time Progress Bar */}
-        {duration && (
-          <Box w="full">
-            <Flex justify="space-between" mb={1}>
-              <Text fontSize="xs" color="gray.500">
-                Time
-              </Text>
-              <Text fontSize="xs" color="gray.500">
-                {timeProgress}%
-              </Text>
-            </Flex>
-            <Box bg="gray.200" borderRadius="full" h="6px" w="full" overflow="hidden">
-              <Box bg={timeProgress > completionPercent ? "orange.400" : colors.main} h="full" w={`${timeProgress}%`} borderRadius="full" transition="width 0.3s ease" />
-            </Box>
-            <Text fontSize="xs" color="gray.400" mt={1} textAlign="center">
-              Day {Math.min(daysElapsed, totalDays)} of {totalDays}
-            </Text>
-          </Box>
-        )}
-
-        {/* Mini Deliverable Timeline with status colors */}
-        <Flex w="full" h="8px" borderRadius="full" overflow="hidden" gap="1px">
-          {deliverables.map((d) => {
-            const dColors = getStatusColor(d.status);
-            return <Box key={d.id} flex={d.durationDays} bg={dColors.main} h="full" title={`${d.text} (${d.status})`} opacity={d.status === "Not Started" ? 0.4 : 1} />;
-          })}
+          <Text fontSize="xs" color="gray.500" mt={0.5}>
+            complete
+          </Text>
         </Flex>
+
+        {/* Percentage labels on segments */}
+        {arcs.map((arc) => {
+          if (arc.percent < 12) return null;
+          return (
+            <Text
+              key={`lbl-${arc.status}`}
+              position="absolute"
+              left={`${arc.labelPos.x}px`}
+              top={`${arc.labelPos.y}px`}
+              transform="translate(-50%, -50%)"
+              fontSize="xs"
+              fontWeight="bold"
+              color="white"
+              textShadow="0 1px 4px rgba(0,0,0,0.5)"
+              pointerEvents="none"
+            >
+              {arc.percent}%
+            </Text>
+          );
+        })}
+      </Box>
+
+      {/* Horizontal Legend */}
+      <Flex gap={3} flexWrap="wrap" justify="center">
+        {arcs.map((arc) => (
+          <Flex key={arc.status} align="center" gap={1.5} fontSize="xs">
+            <Box w="10px" h="10px" borderRadius="sm" bg={STATUS_COLORS[arc.status].main} flexShrink={0} />
+            <Text color="gray.600">{arc.status.replace("Planning & Research", "Planning")}</Text>
+            <Text fontWeight="bold" color="gray.800">
+              ({arc.count})
+            </Text>
+          </Flex>
+        ))}
       </Flex>
-    </Box>
+    </Flex>
   );
 };
