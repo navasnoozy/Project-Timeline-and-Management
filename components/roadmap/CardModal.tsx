@@ -62,7 +62,7 @@ export const CardModal = ({ isOpen, onClose, onSave, initialData }: CardModalPro
   return (
     <Dialog.Root open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
       <Dialog.Backdrop bg="blackAlpha.600" backdropFilter="blur(8px)" />
-      <Dialog.Positioner>
+      <Dialog.Positioner justifyContent="center" alignItems="center">
         <Dialog.Content maxW={{ base: "95vw", sm: "450px", md: "500px" }} borderRadius="2xl" boxShadow="2xl" overflow="hidden">
           <Dialog.Header bgGradient="to-r" gradientFrom="blue.500" gradientTo="purple.500" py={4}>
             <Dialog.Title color="white" fontSize={{ base: "lg", md: "xl" }} fontWeight="bold">
@@ -79,15 +79,13 @@ export const CardModal = ({ isOpen, onClose, onSave, initialData }: CardModalPro
                 <FormInputField name="title" label="Title" placeholder="e.g., Feature Development" />
                 <FormTextarea name="description" label="Description" placeholder="Describe this milestone..." />
 
-                {/* Side-by-side layout for Icon and Status */}
-                <Flex direction={{ base: "column", sm: "row" }} gap={4} align={{ base: "stretch", sm: "flex-start" }}>
-                  <Box flex={1}>
-                    <FormIconPicker name="iconName" />
-                  </Box>
-                  <Box flex={1}>
-                    <FormRadioGroup name="status" label="Status" options={TASK_STATUSES} />
-                  </Box>
-                </Flex>
+                {/* Reverted to Stacked Layout: Icon Picker (Row) then Status (Row/Radio) */}
+                <Box>
+                  <FormIconPicker name="iconName" />
+                </Box>
+                <Box>
+                  <FormRadioGroup name="status" label="Status" options={TASK_STATUSES} />
+                </Box>
 
                 <Flex justify="flex-end" gap={3} mt={4} pt={4} borderTopWidth="1px" borderColor="gray.100">
                   <AppButton variant="ghost" onClick={onClose}>

@@ -36,7 +36,6 @@ const sessionSchema = new Schema<ISession>({
   expiresAt: {
     type: Date,
     required: true,
-    index: true, // For expiring tokens
   },
   userAgent: { type: String },
   ipAddress: { type: String },

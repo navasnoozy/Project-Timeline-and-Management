@@ -11,6 +11,7 @@ import { StatusBadge } from "./StatusBadge";
 import { ProgressGraph } from "./ProgressGraph";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { AppButton } from "@/components/AppButton";
+import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 
 interface TimelineItemProps {
   item: RoadmapItem;
@@ -175,31 +176,15 @@ export const TimelineItem = ({ item, index, isLeft, onUpdateDeliverables, onUpda
       </AnimatePresence>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog.Root open={isDeleteDialogOpen} onOpenChange={(e) => setIsDeleteDialogOpen(e.open)}>
-        <Dialog.Backdrop />
-        <Dialog.Positioner>
-          <Dialog.Content>
-            <Dialog.Header>
-              <Dialog.Title>Delete Card</Dialog.Title>
-            </Dialog.Header>
-            <Dialog.Body>
-              <Text>
-                Are you sure you want to delete <strong>{item.title}</strong>? This action cannot be undone.
-              </Text>
-            </Dialog.Body>
-            <Dialog.Footer>
-              <Flex gap={2} justify="flex-end">
-                <AppButton variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>
-                  Cancel
-                </AppButton>
-                <AppButton colorPalette="red" onClick={handleDelete}>
-                  Delete
-                </AppButton>
-              </Flex>
-            </Dialog.Footer>
-          </Dialog.Content>
-        </Dialog.Positioner>
-      </Dialog.Root>
+      <ConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Card"
+        message={`Are you sure you want to delete **${item.title}**? This action cannot be undone.`}
+        confirmText="Delete"
+        confirmColorPalette="red"
+      />
     </Flex>
   );
 };

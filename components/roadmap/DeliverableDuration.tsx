@@ -1,12 +1,13 @@
 "use client";
 
 import { Box, Text, Popover, Input, Flex, IconButton, Stack } from "@chakra-ui/react";
-import { Switch } from "@/components/ui/switch"; // Assuming standard v3 ui components location or check imports
+
 import { useState, useEffect } from "react";
 import { format, parseISO } from "date-fns";
 import { Calendar, Check, X } from "lucide-react";
 import { Deliverable, isDateRangeOccupied } from "./data";
 import { addWorkingDays, getWorkingDays } from "@/lib/dateUtils";
+import { Switch } from "../ui/switch";
 
 interface DeliverableDurationProps {
   deliverable: Deliverable;
@@ -124,9 +125,9 @@ export const DeliverableDuration = ({ deliverable, allDeliverables, onUpdate, is
 
   if (!isEditable) {
     return (
-      <Flex align="center" gap={1} px={1.5} py={0.5} bg="gray.50" borderRadius="md" borderWidth="1px" borderColor="gray.200">
-        <Calendar size={10} color="var(--chakra-colors-gray-400)" />
-        <Text fontSize="2xs" color="gray.500" whiteSpace="nowrap">
+      <Flex align="center" gap={1} px={1.5} py={0.5} bg="blue.50" borderRadius="md" borderWidth="1px" borderColor="blue.200">
+        <Calendar size={10} color="var(--chakra-colors-blue-500)" />
+        <Text fontSize="2xs" color="blue.700" whiteSpace="nowrap">
           {displayText}
         </Text>
       </Flex>

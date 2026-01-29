@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Deliverable, TaskStatus, getNextAvailableDate } from "./data";
 import { DeliverableDuration } from "./DeliverableDuration";
 import { StatusBadge } from "./StatusBadge";
+import { AppButton } from "@/components/AppButton";
+import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 
 interface DeliverablesListProps {
   deliverables: Deliverable[];
@@ -19,6 +21,7 @@ interface DeliverablesListProps {
 export const DeliverablesList = ({ deliverables, onUpdate, isExpanded, onToggleExpand, isEditable = false }: DeliverablesListProps) => {
   const [newDeliverable, setNewDeliverable] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // Check if screen is large desktop (2xl+)
   const isLargeScreen = useBreakpointValue({ base: false, "2xl": true });
@@ -33,9 +36,12 @@ export const DeliverablesList = ({ deliverables, onUpdate, isExpanded, onToggleE
     onUpdate(updated);
   };
 
-  const handleDelete = (id: string) => {
-    const updated = deliverables.filter((d) => d.id !== id);
-    onUpdate(updated);
+  const confirmDelete = () => {
+    if (deleteId) {
+      const updated = deliverables.filter((d) => d.id !== deleteId);
+      onUpdate(updated);
+      setDeleteId(null);
+    }
   };
 
   const handleAdd = () => {
@@ -117,7 +123,7 @@ export const DeliverablesList = ({ deliverables, onUpdate, isExpanded, onToggleE
                     {d.text}
                   </Text>
                   {isEditable && (
-                    <IconButton className="delete-btn" aria-label="Delete deliverable" size="xs" variant="ghost" colorPalette="red" onClick={() => handleDelete(d.id)}>
+                    <IconButton className="delete-btn" aria-label="Delete deliverable" size="xs" variant="ghost" colorPalette="red" onClick={() => setDeleteId(d.id)}>
                       <Trash2 size={12} />
                     </IconButton>
                   )}
@@ -185,6 +191,17 @@ export const DeliverablesList = ({ deliverables, onUpdate, isExpanded, onToggleE
           </Flex>
         )}
       </Flex>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Deliverable"
+        message="Are you sure you want to delete this key deliverable? This action cannot be undone."
+        confirmText="Delete"
+        confirmColorPalette="red"
+      />
     </Box>
   );
 };
