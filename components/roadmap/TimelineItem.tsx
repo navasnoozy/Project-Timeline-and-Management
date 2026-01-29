@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Box, Card, Flex, Text, Icon, IconButton, Dialog } from "@chakra-ui/react";
 import { Trash2, Pencil } from "lucide-react";
 import { RoadmapItem, Deliverable, TaskStatus } from "./data";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { DurationLabel } from "./DurationLabel";
 import { DeliverablesList } from "./DeliverablesList";
 import { StatusBadge } from "./StatusBadge";
@@ -51,13 +51,19 @@ export const TimelineItem = ({ item, index, isLeft, onUpdateDeliverables, onUpda
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { data: currentUser } = useCurrentUser();
 
-  const handleDeliverablesUpdate = (deliverables: Deliverable[]) => {
-    onUpdateDeliverables(item.id, deliverables);
-  };
+  const handleDeliverablesUpdate = useCallback(
+    (deliverables: Deliverable[]) => {
+      onUpdateDeliverables(item.id, deliverables);
+    },
+    [item.id, onUpdateDeliverables],
+  );
 
-  const handleStatusChange = (status: TaskStatus) => {
-    onUpdateStatus(item.id, status);
-  };
+  const handleStatusChange = useCallback(
+    (status: TaskStatus) => {
+      onUpdateStatus(item.id, status);
+    },
+    [item.id, onUpdateStatus],
+  );
 
   const handleDelete = () => {
     onDeleteItem(item.id);
@@ -98,6 +104,7 @@ export const TimelineItem = ({ item, index, isLeft, onUpdateDeliverables, onUpda
         _hover={{ ring: "3px", ringColor: "purple.200" }}
         cursor={isLoggedIn ? "grab" : "default"}
         _active={{ cursor: isLoggedIn ? "grabbing" : "default" }}
+        style={{ touchAction: "none" }}
       >
         <Icon as={item.icon} fontSize={{ base: "lg", md: "lg", "2xl": "xl" }} color="purple.500" />
       </Box>

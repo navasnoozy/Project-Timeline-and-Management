@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Box, Flex, Spinner, Center, Text } from "@chakra-ui/react";
 import { TimelineItem } from "./TimelineItem";
 import { AddCardPlaceholder } from "./AddCardPlaceholder";
@@ -8,8 +8,22 @@ import { CardModal } from "./CardModal";
 import { RoadmapItem, Deliverable, TaskStatus } from "./data";
 import { useRoadmapItems, useCreateRoadmapItem, useUpdateRoadmapItem, useDeleteRoadmapItem, useReorderRoadmapItems } from "@/hooks/useRoadmap";
 import { AddCardInput } from "@/lib/schemas/roadmap";
-import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors, DragOverlay, DragStartEvent, DragEndEvent, defaultDropAnimationSideEffects } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+  DragStartEvent,
+  DragEndEvent,
+  defaultDropAnimationSideEffects,
+  Announcements,
+} from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+
 import { SortableTimelineItem } from "./SortableTimelineItem";
 import { TimelineItemPreview } from "./TimelineItemPreview";
 import { motion } from "motion/react";
@@ -19,6 +33,28 @@ interface ModalState {
   mode: "add" | "edit";
   data?: RoadmapItem;
 }
+
+// Screen reader announcements for accessibility
+const announcements: Announcements = {
+  onDragStart(id) {
+    return `Picked up roadmap item ${id}.`;
+  },
+  onDragOver({ active, over }) {
+    if (over) {
+      return `Roadmap item ${active.id} was moved over ${over.id}.`;
+    }
+    return `Roadmap item ${active.id} is no longer over a droppable area.`;
+  },
+  onDragEnd({ active, over }) {
+    if (over) {
+      return `Roadmap item ${active.id} was dropped over ${over.id}.`;
+    }
+    return `Roadmap item ${active.id} was dropped.`;
+  },
+  onDragCancel({ active }) {
+    return `Dragging was cancelled. Roadmap item ${active.id} was returned to its original position.`;
+  },
+};
 
 export const Timeline = () => {
   // Server State via React Query
@@ -38,79 +74,97 @@ export const Timeline = () => {
     mode: "add",
   });
 
-  // Sensors with robust constraints
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 10 } }), useSensor(TouchSensor, { activationConstraint: { delay: 500, tolerance: 5 } }));
+  // Sensors with robust constraints and keyboard support
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 10 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 500, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const activeItem = items.find((i) => i.id === activeDragId) || null;
 
-  const handleDragStart = (event: DragStartEvent) => {
+  const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveDragId(event.active.id as string);
-  };
+  }, []);
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveDragId(null);
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      setActiveDragId(null);
 
-    if (over && active.id !== over.id) {
-      const oldIndex = items.findIndex((i) => i.id === active.id);
-      const newIndex = items.findIndex((i) => i.id === over.id);
+      if (over && active.id !== over.id) {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over.id);
 
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const newOrder = arrayMove(items, oldIndex, newIndex);
-        // Optimistic update + backend sync
-        reorderMutation.mutate(newOrder.map((i) => i.id));
+        if (oldIndex !== -1 && newIndex !== -1) {
+          const newOrder = arrayMove(items, oldIndex, newIndex);
+          reorderMutation.mutate(newOrder.map((i) => i.id));
+        }
       }
-    }
-  };
+    },
+    [items, reorderMutation],
+  );
 
-  const handleToggleExpand = (id: string) => {
+  const handleToggleExpand = useCallback((id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
-  };
+  }, []);
 
-  const handleUpdateDeliverables = (id: string, deliverables: Deliverable[]) => {
-    const item = items.find((i) => i.id === id);
-    if (item) {
-      updateItemMutation.mutate({ ...item, deliverables });
-    }
-  };
+  const handleUpdateDeliverables = useCallback(
+    (id: string, deliverables: Deliverable[]) => {
+      const item = items.find((i) => i.id === id);
+      if (item) {
+        updateItemMutation.mutate({ ...item, deliverables });
+      }
+    },
+    [items, updateItemMutation],
+  );
 
-  const handleUpdateStatus = (id: string, status: TaskStatus) => {
-    const item = items.find((i) => i.id === id);
-    if (item) {
-      updateItemMutation.mutate({ ...item, status });
-    }
-  };
+  const handleUpdateStatus = useCallback(
+    (id: string, status: TaskStatus) => {
+      const item = items.find((i) => i.id === id);
+      if (item) {
+        updateItemMutation.mutate({ ...item, status });
+      }
+    },
+    [items, updateItemMutation],
+  );
 
-  const handleSaveItem = (item: RoadmapItem) => {
-    if (modalState.mode === "add") {
-      const input: AddCardInput = {
-        title: item.title,
-        description: item.description,
-        status: item.status,
-        iconName: item.iconName as AddCardInput["iconName"],
-      };
-      createItemMutation.mutate(input);
-    } else {
-      updateItemMutation.mutate(item);
-    }
-    closeModal();
-  };
+  const handleSaveItem = useCallback(
+    (item: RoadmapItem) => {
+      if (modalState.mode === "add") {
+        const input: AddCardInput = {
+          title: item.title,
+          description: item.description,
+          status: item.status,
+          iconName: item.iconName as AddCardInput["iconName"],
+        };
+        createItemMutation.mutate(input);
+      } else {
+        updateItemMutation.mutate(item);
+      }
+      closeModal();
+    },
+    [modalState.mode, createItemMutation, updateItemMutation],
+  );
 
-  const handleDeleteItem = (id: string) => {
-    deleteItemMutation.mutate(id);
-  };
+  const handleDeleteItem = useCallback(
+    (id: string) => {
+      deleteItemMutation.mutate(id);
+    },
+    [deleteItemMutation],
+  );
 
-  const openAddModal = () => {
+  const openAddModal = useCallback(() => {
     setModalState({ isOpen: true, mode: "add" });
-  };
+  }, []);
 
-  const openEditModal = (item: RoadmapItem) => {
+  const openEditModal = useCallback((item: RoadmapItem) => {
     setModalState({ isOpen: true, mode: "edit", data: item });
-  };
+  }, []);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setModalState((prev) => ({ ...prev, isOpen: false }));
-  };
+  }, []);
 
   if (isLoading) {
     return (
@@ -129,7 +183,7 @@ export const Timeline = () => {
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} accessibility={{ announcements }}>
       <Box position="relative" width="full" maxWidth={{ base: "full", md: "5xl", lg: "6xl" }} mx="auto" p={4} pb={8}>
         <Flex direction="column">
           {/* Active Items Section - Solid Line */}
@@ -193,10 +247,19 @@ export const Timeline = () => {
         <DragOverlay dropAnimation={null}>
           {activeItem ? (
             <motion.div
-              initial={{ scale: 1 }}
-              animate={{ scale: 0.85, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" }}
+              initial={{ scale: 1, rotate: 0 }}
+              animate={{
+                scale: 0.85,
+                rotate: -2,
+                filter: "drop-shadow(0 25px 50px rgba(0, 0, 0, 0.35))",
+              }}
               transition={{ type: "spring" as const, stiffness: 400, damping: 25 }}
-              style={{ width: "100%", transformOrigin: "center center" }}
+              style={{
+                width: "100%",
+                transformOrigin: "center center",
+                cursor: "grabbing",
+                willChange: "transform, filter",
+              }}
             >
               <TimelineItemPreview item={activeItem} />
             </motion.div>

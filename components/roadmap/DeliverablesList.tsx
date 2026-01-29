@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Text, Flex, Input, IconButton, useBreakpointValue, Badge, Popover, Textarea, Portal } from "@chakra-ui/react";
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Plus, Trash2, ChevronDown, ChevronUp, Check, X, Pencil, GripVertical } from "lucide-react";
 import { Deliverable, TaskStatus, getNextAvailableDate } from "./data";
 import { DeliverableDuration } from "./DeliverableDuration";
@@ -38,141 +38,145 @@ interface SortableDeliverableProps {
   allDeliverables: Deliverable[];
 }
 
-const SortableDeliverable = ({
-  deliverable,
-  isEditable,
-  editingId,
-  editText,
-  onEditOpen,
-  onEditTextChange,
-  onEditSave,
-  onEditCancel,
-  onEditKeyDown,
-  onDelete,
-  onStatusChange,
-  onDurationUpdate,
-  allDeliverables,
-}: SortableDeliverableProps) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: deliverable.id });
+const SortableDeliverable = memo(
+  ({
+    deliverable,
+    isEditable,
+    editingId,
+    editText,
+    onEditOpen,
+    onEditTextChange,
+    onEditSave,
+    onEditCancel,
+    onEditKeyDown,
+    onDelete,
+    onStatusChange,
+    onDurationUpdate,
+    allDeliverables,
+  }: SortableDeliverableProps) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: deliverable.id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 10 : 1,
-  };
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+      zIndex: isDragging ? 10 : 1,
+    };
 
-  const d = deliverable;
+    const d = deliverable;
 
-  return (
-    <Box
-      ref={setNodeRef}
-      style={style}
-      bg="white"
-      py={{ base: 1.5, md: 1, "2xl": 1.5 }}
-      px={2}
-      borderRadius="md"
-      borderWidth="1px"
-      borderColor={editingId === d.id ? "blue.400" : isDragging ? "blue.300" : "gray.200"}
-      boxShadow={isDragging ? "lg" : editingId === d.id ? "0 0 0 2px var(--chakra-colors-blue-100)" : "none"}
-      transition="border-color 0.15s, box-shadow 0.15s"
-      css={{
-        "& .action-btn": { opacity: 0, transition: "opacity 0.2s" },
-        "&:hover .action-btn": { opacity: 1 },
-      }}
-    >
-      {/* Row 1: Drag Handle + Name + Actions */}
-      <Flex justify="space-between" align="flex-start" gap={2}>
-        {/* Drag Handle - LEFT SIDE */}
-        {isEditable && (
-          <IconButton {...listeners} {...attributes} aria-label="Drag to reorder" size="xs" variant="ghost" colorPalette="gray" cursor="grab" _active={{ cursor: "grabbing" }} minW="20px" px={0}>
-            <GripVertical size={14} />
-          </IconButton>
-        )}
+    return (
+      <Box
+        ref={setNodeRef}
+        style={style}
+        bg="white"
+        py={{ base: 1.5, md: 1, "2xl": 1.5 }}
+        px={2}
+        borderRadius="md"
+        borderWidth="1px"
+        borderColor={editingId === d.id ? "blue.400" : isDragging ? "blue.300" : "gray.200"}
+        boxShadow={isDragging ? "lg" : editingId === d.id ? "0 0 0 2px var(--chakra-colors-blue-100)" : "none"}
+        transition="border-color 0.15s, box-shadow 0.15s"
+        css={{
+          "& .action-btn": { opacity: 0, transition: "opacity 0.2s" },
+          "&:hover .action-btn": { opacity: 1 },
+        }}
+      >
+        {/* Row 1: Drag Handle + Name + Actions */}
+        <Flex justify="space-between" align="flex-start" gap={2}>
+          {/* Drag Handle - LEFT SIDE */}
+          {isEditable && (
+            <IconButton {...listeners} {...attributes} aria-label="Drag to reorder" size="xs" variant="ghost" colorPalette="gray" cursor="grab" _active={{ cursor: "grabbing" }} minW="20px" px={0}>
+              <GripVertical size={14} />
+            </IconButton>
+          )}
 
-        {/* Text + Edit Popover */}
-        <Popover.Root
-          open={editingId === d.id}
-          onOpenChange={(e) => {
-            if (!e.open) onEditCancel();
-          }}
-        >
-          <Flex flex={1} align="center" gap={1}>
-            <Text fontSize="xs" fontWeight="medium" flex={1} textDecoration={d.status === "Completed" ? "line-through" : "none"} color={d.status === "Completed" ? "gray.400" : "gray.700"}>
-              {d.text}
-            </Text>
+          {/* Text + Edit Popover */}
+          <Popover.Root
+            open={editingId === d.id}
+            onOpenChange={(e) => {
+              if (!e.open) onEditCancel();
+            }}
+          >
+            <Flex flex={1} align="center" gap={1}>
+              <Text fontSize="xs" fontWeight="medium" flex={1} textDecoration={d.status === "Completed" ? "line-through" : "none"} color={d.status === "Completed" ? "gray.400" : "gray.700"}>
+                {d.text}
+              </Text>
 
-            {isEditable && (
-              <Popover.Trigger asChild>
-                <IconButton className="action-btn" aria-label="Edit deliverable" size="xs" variant="ghost" colorPalette="blue" onClick={() => onEditOpen(d)}>
-                  <Pencil size={12} />
-                </IconButton>
-              </Popover.Trigger>
-            )}
-          </Flex>
+              {isEditable && (
+                <Popover.Trigger asChild>
+                  <IconButton className="action-btn" aria-label="Edit deliverable" size="xs" variant="ghost" colorPalette="blue" onClick={() => onEditOpen(d)}>
+                    <Pencil size={12} />
+                  </IconButton>
+                </Popover.Trigger>
+              )}
+            </Flex>
 
-          <Portal>
-            <Popover.Positioner zIndex="popover">
-              <Popover.Content width="300px" boxShadow="xl" borderRadius="lg" p={0} overflow="hidden">
-                <Popover.Arrow>
-                  <Popover.ArrowTip />
-                </Popover.Arrow>
-                <Popover.Body p={3}>
-                  <Text fontSize="xs" fontWeight="bold" color="gray.600" mb={2}>
-                    Edit Deliverable
-                  </Text>
-                  <Textarea
-                    value={editText}
-                    onChange={(e) => onEditTextChange(e.target.value)}
-                    onKeyDown={onEditKeyDown}
-                    placeholder="Enter deliverable text..."
-                    rows={3}
-                    fontSize="sm"
-                    resize="vertical"
-                    autoFocus
-                    _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px var(--chakra-colors-blue-400)" }}
-                  />
-                  <Text fontSize="2xs" color="gray.400" mt={1}>
-                    Ctrl+Enter to save • Esc to cancel
-                  </Text>
-                  <Flex justify="flex-end" gap={1} mt={3}>
-                    <IconButton aria-label="Cancel" size="sm" variant="ghost" colorPalette="gray" onClick={onEditCancel}>
-                      <X size={14} />
-                    </IconButton>
-                    <IconButton aria-label="Save" size="sm" variant="solid" colorPalette="green" onClick={onEditSave} disabled={!editText.trim()}>
-                      <Check size={14} />
-                    </IconButton>
-                  </Flex>
-                </Popover.Body>
-              </Popover.Content>
-            </Popover.Positioner>
-          </Portal>
-        </Popover.Root>
+            <Portal>
+              <Popover.Positioner zIndex="popover">
+                <Popover.Content width="300px" boxShadow="xl" borderRadius="lg" p={0} overflow="hidden">
+                  <Popover.Arrow>
+                    <Popover.ArrowTip />
+                  </Popover.Arrow>
+                  <Popover.Body p={3}>
+                    <Text fontSize="xs" fontWeight="bold" color="gray.600" mb={2}>
+                      Edit Deliverable
+                    </Text>
+                    <Textarea
+                      value={editText}
+                      onChange={(e) => onEditTextChange(e.target.value)}
+                      onKeyDown={onEditKeyDown}
+                      placeholder="Enter deliverable text..."
+                      rows={3}
+                      fontSize="sm"
+                      resize="vertical"
+                      autoFocus
+                      _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px var(--chakra-colors-blue-400)" }}
+                    />
+                    <Text fontSize="2xs" color="gray.400" mt={1}>
+                      Ctrl+Enter to save • Esc to cancel
+                    </Text>
+                    <Flex justify="flex-end" gap={1} mt={3}>
+                      <IconButton aria-label="Cancel" size="sm" variant="ghost" colorPalette="gray" onClick={onEditCancel}>
+                        <X size={14} />
+                      </IconButton>
+                      <IconButton aria-label="Save" size="sm" variant="solid" colorPalette="green" onClick={onEditSave} disabled={!editText.trim()}>
+                        <Check size={14} />
+                      </IconButton>
+                    </Flex>
+                  </Popover.Body>
+                </Popover.Content>
+              </Popover.Positioner>
+            </Portal>
+          </Popover.Root>
 
-        {/* Delete Button */}
-        {isEditable && (
-          <IconButton className="action-btn" aria-label="Delete deliverable" size="xs" variant="ghost" colorPalette="red" onClick={() => onDelete(d.id)}>
-            <Trash2 size={12} />
-          </IconButton>
-        )}
-      </Flex>
+          {/* Delete Button */}
+          {isEditable && (
+            <IconButton className="action-btn" aria-label="Delete deliverable" size="xs" variant="ghost" colorPalette="red" onClick={() => onDelete(d.id)}>
+              <Trash2 size={12} />
+            </IconButton>
+          )}
+        </Flex>
 
-      {/* Row 2: Status + Duration */}
-      <Flex justify="space-between" align="center" mt={1.5} flexWrap="wrap" gap={1} pl={isEditable ? "28px" : 0}>
-        <StatusBadge status={d.status} onStatusChange={(status) => isEditable && onStatusChange(d.id, status)} />
-        <DeliverableDuration
-          deliverable={d}
-          allDeliverables={allDeliverables}
-          onUpdate={(startDate, durationDays, options) => onDurationUpdate(d.id, startDate, durationDays, options)}
-          isEditable={isEditable}
-        />
-      </Flex>
-    </Box>
-  );
-};
+        {/* Row 2: Status + Duration */}
+        <Flex justify="space-between" align="center" mt={1.5} flexWrap="wrap" gap={1} pl={isEditable ? "28px" : 0}>
+          <StatusBadge status={d.status} onStatusChange={(status) => isEditable && onStatusChange(d.id, status)} />
+          <DeliverableDuration
+            deliverable={d}
+            allDeliverables={allDeliverables}
+            onUpdate={(startDate, durationDays, options) => onDurationUpdate(d.id, startDate, durationDays, options)}
+            isEditable={isEditable}
+          />
+        </Flex>
+      </Box>
+    );
+  },
+);
+
+SortableDeliverable.displayName = "SortableDeliverable";
 
 // Main Component
-export const DeliverablesList = ({ deliverables, onUpdate, isExpanded, onToggleExpand, isEditable = false }: DeliverablesListProps) => {
+export const DeliverablesList = memo(({ deliverables, onUpdate, isExpanded, onToggleExpand, isEditable = false }: DeliverablesListProps) => {
   const [newDeliverable, setNewDeliverable] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -396,4 +400,6 @@ export const DeliverablesList = ({ deliverables, onUpdate, isExpanded, onToggleE
       />
     </Box>
   );
-};
+});
+
+DeliverablesList.displayName = "DeliverablesList";

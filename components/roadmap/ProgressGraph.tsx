@@ -1,9 +1,11 @@
 "use client";
 
+import { memo } from "react";
+
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { Deliverable, TaskStatus, getStatusCounts, TASK_STATUSES } from "./data";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 
 interface ProgressGraphProps {
   deliverables: Deliverable[];
@@ -40,7 +42,7 @@ const describeArc = (cx: number, cy: number, radius: number, startAngle: number,
 const MotionPath = motion.path;
 const MotionBox = motion.create(Box);
 
-export const ProgressGraph = ({ deliverables }: ProgressGraphProps) => {
+export const ProgressGraph = memo(({ deliverables }: ProgressGraphProps) => {
   const totalTasks = deliverables.length;
   const statusCounts = getStatusCounts(deliverables);
   const completedCount = statusCounts["Completed"];
@@ -265,4 +267,6 @@ export const ProgressGraph = ({ deliverables }: ProgressGraphProps) => {
       </Flex>
     </Flex>
   );
-};
+});
+
+ProgressGraph.displayName = "ProgressGraph";

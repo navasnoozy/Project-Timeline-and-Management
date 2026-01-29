@@ -2,7 +2,7 @@
 
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { Plus } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import useCurrentUser from "@/hooks/useCurrentUser";
 
 interface AddCardButtonProps {

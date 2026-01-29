@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { useSortable, defaultAnimateLayoutChanges, AnimateLayoutChanges } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { TimelineItem } from "./TimelineItem";
@@ -19,40 +20,45 @@ interface SortableTimelineItemProps {
 
 // Custom animation config: animate during drag, but skip animation on drop
 const animateLayoutChanges: AnimateLayoutChanges = (args) => {
-  const { isSorting, wasDragging } = args;
-  // Skip animation when the item was just dropped (wasDragging)
-  if (wasDragging) {
-    return false;
-  }
+  const { wasDragging } = args;
+  if (wasDragging) return false;
   return defaultAnimateLayoutChanges(args);
 };
 
-export const SortableTimelineItem = ({ item, index, onUpdateDeliverables, onUpdateStatus, isExpanded, onToggleExpand, onDeleteItem, onEditItem }: SortableTimelineItemProps) => {
+// Spring config for smooth GPU-accelerated animations
+const springTransition = { type: "spring" as const, stiffness: 500, damping: 30 };
+
+const SortableTimelineItemComponent = ({ item, index, onUpdateDeliverables, onUpdateStatus, isExpanded, onToggleExpand, onDeleteItem, onEditItem }: SortableTimelineItemProps) => {
   const { isOver, attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
     animateLayoutChanges,
   });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    position: "relative" as const,
-    zIndex: isDragging ? 0 : 1,
-  };
+  // Memoize styles to prevent recalculations
+  const containerStyle = useMemo(
+    () => ({
+      transform: CSS.Transform.toString(transform),
+      transition,
+      position: "relative" as const,
+      zIndex: isDragging ? 0 : 1,
+      // CSS will-change hints for browser optimization
+      willChange: isDragging ? "transform, opacity" : "auto",
+    }),
+    [transform, transition, isDragging],
+  );
 
-  // Spring config for smooth GPU-accelerated animations
-  const springTransition = { type: "spring" as const, stiffness: 500, damping: 30 };
+  // Memoize animation values
+  const animateValues = useMemo(
+    () => ({
+      scale: isOver && !isDragging ? 0.9 : 1,
+      opacity: isDragging ? 0.3 : 1,
+    }),
+    [isOver, isDragging],
+  );
 
   return (
-    <div ref={setNodeRef} style={style}>
-      {/* Motion wrapper: shrink on approach (isOver), fade when being dragged */}
-      <motion.div
-        animate={{
-          scale: isOver && !isDragging ? 0.9 : 1,
-          opacity: isDragging ? 0.3 : 1,
-        }}
-        transition={springTransition}
-      >
+    <div ref={setNodeRef} style={containerStyle}>
+      <motion.div animate={animateValues} transition={springTransition} style={{ willChange: "transform, opacity" }}>
         <TimelineItem
           item={item}
           index={index}
@@ -70,3 +76,8 @@ export const SortableTimelineItem = ({ item, index, onUpdateDeliverables, onUpda
     </div>
   );
 };
+
+// Memoize to prevent unnecessary re-renders
+export const SortableTimelineItem = memo(SortableTimelineItemComponent);
+
+SortableTimelineItem.displayName = "SortableTimelineItem";
