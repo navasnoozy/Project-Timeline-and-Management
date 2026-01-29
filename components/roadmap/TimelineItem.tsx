@@ -55,8 +55,9 @@ export const TimelineItem = ({ item, index, isLeft, onUpdateDeliverables, onUpda
     <Flex
       position="relative"
       width="100%"
-      mb={{ base: 3, md: 3, "2xl": 5 }}
+      mb={{ base: 3, md: 8, "2xl": 12 }}
       mt={{ base: 2, md: 2, "2xl": 4 }}
+      minH={{ base: "auto", "2xl": "220px" }} // Reduced: Graph is now 260px
       direction={{ base: "column", md: "row" }}
       align={{ base: "flex-start", md: "center" }}
       onMouseEnter={() => setIsHovered(true)}
@@ -117,15 +118,15 @@ export const TimelineItem = ({ item, index, isLeft, onUpdateDeliverables, onUpda
       <AnimatePresence>
         {isHovered && (
           <motion.div
-            initial={{ opacity: 0, x: isLeft ? 30 : -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: isLeft ? 30 : -30 }}
+            initial={{ opacity: 0, x: isLeft ? 30 : -30, y: "-50%" }}
+            animate={{ opacity: 1, x: 0, y: "-50%" }}
+            exit={{ opacity: 0, x: isLeft ? 30 : -30, y: "-50%" }}
             transition={{ duration: 0.25 }}
             style={{
               position: "absolute",
-              top: "0",
-              left: isLeft ? "53%" : "auto",
-              right: isLeft ? "auto" : "53%",
+              top: "50%",
+              left: isLeft ? "54%" : "auto",
+              right: isLeft ? "auto" : "54%",
               zIndex: 15,
               display: "block",
             }}
