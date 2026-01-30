@@ -43,6 +43,7 @@ export const useCreateRoadmapItem = () => {
           ...newItemInput,
           icon: ICON_MAP[newItemInput.iconName] || ICON_MAP[DEFAULT_ICON_NAME],
           deliverables: [],
+          order: previousItems.length, // Assign order based on current list length
         };
         queryClient.setQueryData<RoadmapItem[]>(["roadmap"], (old) => [...(old || []), tempItem]);
       }
