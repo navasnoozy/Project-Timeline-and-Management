@@ -3,7 +3,7 @@
 import { Box, Text, Popover, Input, Flex, IconButton, Stack, Portal } from "@chakra-ui/react";
 
 import { useState, useEffect } from "react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 import { Calendar, Check, X } from "lucide-react";
 import { Deliverable, isDateRangeOccupied } from "./types";
 import { addWorkingDays, getWorkingDays } from "@/lib/dateUtils";
@@ -37,14 +37,16 @@ export const DeliverableDuration = ({ deliverable, allDeliverables, onUpdate, is
 
   const formatDateShort = (date: Date | string) => {
     const d = typeof date === "string" ? parseISO(date) : date;
-    return format(d, "MMM d");
+    return isValid(d) ? format(d, "MMM d") : "-";
   };
 
   useEffect(() => {
     if (isOpen) {
       // Calculate Inclusive End for Edit Mode
       const calculatedEnd = addWorkingDays(editStartDate, Math.max(0, editDurationDays - 1), { excludeHolidays, excludeSaturdays });
-      setEditEndDate(format(calculatedEnd, "yyyy-MM-dd"));
+      if (isValid(calculatedEnd)) {
+        setEditEndDate(format(calculatedEnd, "yyyy-MM-dd"));
+      }
       setError(null);
     }
   }, [isOpen, editStartDate, editDurationDays, excludeHolidays, excludeSaturdays]);
@@ -62,7 +64,9 @@ export const DeliverableDuration = ({ deliverable, allDeliverables, onUpdate, is
     const days = parseInt(value) || 1;
     setEditDurationDays(days);
     const newEnd = addWorkingDays(editStartDate, Math.max(0, days - 1), { excludeHolidays, excludeSaturdays });
-    setEditEndDate(format(newEnd, "yyyy-MM-dd"));
+    if (isValid(newEnd)) {
+      setEditEndDate(format(newEnd, "yyyy-MM-dd"));
+    }
     validateAndUpdate(editStartDate, days, { excludeHolidays, excludeSaturdays }, allowOverlap);
   };
 
@@ -167,7 +171,9 @@ export const DeliverableDuration = ({ deliverable, allDeliverables, onUpdate, is
   const handleStartDateChange = (value: string) => {
     setEditStartDate(value);
     const newEnd = addWorkingDays(value, Math.max(0, editDurationDays - 1), { excludeHolidays, excludeSaturdays });
-    setEditEndDate(format(newEnd, "yyyy-MM-dd"));
+    if (isValid(newEnd)) {
+      setEditEndDate(format(newEnd, "yyyy-MM-dd"));
+    }
     validateAndUpdate(value, editDurationDays, { excludeHolidays, excludeSaturdays }, allowOverlap);
   };
 
@@ -182,13 +188,17 @@ export const DeliverableDuration = ({ deliverable, allDeliverables, onUpdate, is
     if (editMode === "duration") {
       // Keep duration constant, update end date
       const newEnd = addWorkingDays(editStartDate, Math.max(0, editDurationDays - 1), { excludeHolidays: newHolidays, excludeSaturdays: newSaturdays });
-      setEditEndDate(format(newEnd, "yyyy-MM-dd"));
+      if (isValid(newEnd)) {
+        setEditEndDate(format(newEnd, "yyyy-MM-dd"));
+      }
     } else {
       // Keep end date constant (if possible), update duration?
       // Better to follow duration priority usually, but if user is changing rules, duration usually stays same (work effort same), dates shift.
       // So same logic as duration change.
       const newEnd = addWorkingDays(editStartDate, Math.max(0, editDurationDays - 1), { excludeHolidays: newHolidays, excludeSaturdays: newSaturdays });
-      setEditEndDate(format(newEnd, "yyyy-MM-dd"));
+      if (isValid(newEnd)) {
+        setEditEndDate(format(newEnd, "yyyy-MM-dd"));
+      }
     }
     validateAndUpdate(editStartDate, editDurationDays, { excludeHolidays: newHolidays, excludeSaturdays: newSaturdays }, allowOverlap);
   };
@@ -285,7 +295,7 @@ export const DeliverableDuration = ({ deliverable, allDeliverables, onUpdate, is
                   <Box>
                     <Input type="number" size="xs" min={1} value={editDurationDays} onChange={(e) => handleDurationChange(e.target.value)} />
                     <Text fontSize="2xs" color="gray.500" mt={1}>
-                      End: {editEndDate ? format(parseISO(editEndDate), "MMM d, yyyy") : "-"}
+                      End: {editEndDate && isValid(parseISO(editEndDate)) ? format(parseISO(editEndDate), "MMM d, yyyy") : "-"}
                     </Text>
                   </Box>
                 ) : (

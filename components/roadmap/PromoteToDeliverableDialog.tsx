@@ -9,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useEffect, useMemo } from "react";
 
-import { parseISO, format } from "date-fns";
+import { parseISO, format, isValid } from "date-fns";
 import { addWorkingDays, getWorkingDays } from "@/lib/dateUtils";
 import { useState } from "react";
 
@@ -62,13 +62,14 @@ export const PromoteToDeliverableDialog = ({ isOpen, onClose, suggestion, onProm
   // Derive endDate from watchedStartDate and watchedDuration (no setState needed)
   const calculatedEndDate = useMemo(() => {
     if (inputMode === "duration" && watchedStartDate && watchedDuration) {
-      try {
-        const start = parseISO(watchedStartDate);
+      const start = parseISO(watchedStartDate);
+      if (isValid(start)) {
         const end = addWorkingDays(start, watchedDuration);
-        return format(end, "yyyy-MM-dd");
-      } catch {
-        return "";
+        if (isValid(end)) {
+          return format(end, "yyyy-MM-dd");
+        }
       }
+      return "";
     }
     return endDate;
   }, [watchedStartDate, watchedDuration, inputMode, endDate]);
@@ -78,19 +79,18 @@ export const PromoteToDeliverableDialog = ({ isOpen, onClose, suggestion, onProm
     const newEndDate = e.target.value;
     setEndDate(newEndDate);
     if (inputMode === "endDate" && watchedStartDate && newEndDate) {
-      try {
-        // Calculate days between start and end
-        // Simple difference first, or working days?
-        // Let's use differenceInDays for raw duration, or strict working days?
-        // User asked for "duration days", usually implies working days in this context?
-        // Let's stick to simple logic: Duration = Working Days between Start and End
-        // We need a utility in dateUtils for this inverse calculation if we want to be precise.
-        // For now, let's just use differenceInCalendarDays as a rough estimate or implement a simple loop.
-        // Actually, getWorkingDays (which works well) is better.
-        // But getWorkingDays in dateUtils seems to be "workingDays++" loop.
-        const days = getWorkingDays(watchedStartDate, newEndDate);
-        setValue("duration", days > 0 ? days : 1);
-      } catch (e) {
+      // Calculate days between start and end
+      if (watchedStartDate && newEndDate) {
+        const start = parseISO(watchedStartDate);
+        const end = parseISO(newEndDate);
+
+        if (isValid(start) && isValid(end)) {
+          const days = getWorkingDays(watchedStartDate, newEndDate);
+          setValue("duration", days > 0 ? days : 1);
+        } else {
+          setValue("duration", 1);
+        }
+      } else {
         setValue("duration", 1);
       }
     }

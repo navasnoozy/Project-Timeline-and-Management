@@ -310,7 +310,9 @@ export const DeliverablesList = memo(({ deliverables, onUpdate, isExpanded, onTo
     setNewDuration(7);
     // Calculate initial end date
     const initialEnd = addWorkingDays(nextDate, 6, { excludeHolidays: true, excludeSaturdays: false });
-    setNewEndDate(format(initialEnd, "yyyy-MM-dd"));
+    if (isValid(initialEnd)) {
+      setNewEndDate(format(initialEnd, "yyyy-MM-dd"));
+    }
     setNewError(null);
     setAllowOverlap(false);
     setIsAdding(true);
