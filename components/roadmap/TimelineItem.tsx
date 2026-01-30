@@ -167,9 +167,9 @@ export const TimelineItem = ({
           borderWidth="2px"
           borderColor="purple.400"
           transition="all 0.2s"
-          _hover={{ borderColor: "purple.300", boxShadow: "0 0 0 3px var(--chakra-colors-purple-200)", cursor: isLoggedIn ? "grab" : "default" }}
-          cursor={isLoggedIn ? "grab" : "default"}
-          _active={{ cursor: isLoggedIn ? "grabbing" : "default" }}
+          _hover={{ borderColor: "purple.300", boxShadow: "0 0 0 3px var(--chakra-colors-purple-200)", cursor: isLoggedIn ? "grab" : "pointer" }}
+          cursor={isLoggedIn ? "grab" : "pointer"}
+          _active={{ cursor: isLoggedIn ? "grabbing" : "pointer" }}
           // Pulsing glow animation when hint is active
           animation={forceTooltipOpen ? "pulse 1.5s ease-in-out infinite" : undefined}
           css={
