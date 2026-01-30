@@ -32,7 +32,7 @@ export const DurationLabel = ({ deliverables, isLeft }: DurationLabelProps) => {
 
   if (!computed) {
     return (
-      <Box position="absolute" top="-34px" left="0" right="0" zIndex={5} width="100%">
+      <Box position="absolute" top={{ base: "-40px", md: "-34px" }} left="0" right="0" zIndex={5} width="100%">
         <Flex justify="center" align="center" width="100%">
           <Flex {...datePillStyles} bg="gray.50" color="gray.400" borderColor="gray.100">
             <Calendar size={12} />
@@ -48,7 +48,7 @@ export const DurationLabel = ({ deliverables, isLeft }: DurationLabelProps) => {
   };
 
   return (
-    <Box position="absolute" top="-38px" left="0" right="0" zIndex={5} width="100%">
+    <Box position="absolute" top={{ base: "-44px", md: "-38px" }} left="0" right="0" zIndex={5} width="100%">
       <Flex justify="space-between" align="center" width="100%" px={1}>
         {/* Start Date (Left) */}
         <Flex {...datePillStyles}>

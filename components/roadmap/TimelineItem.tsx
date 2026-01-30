@@ -124,7 +124,7 @@ export const TimelineItem = ({
       position="relative"
       width="100%"
       mb={{ base: 3, md: 8, "2xl": 12 }}
-      mt={{ base: 2, md: 2, "2xl": 4 }}
+      mt={{ base: 14, md: 6, "2xl": 4 }}
       minH={{ base: "auto", "2xl": "220px" }}
       direction={{ base: "column", md: "row" }}
       align={{ base: "flex-start", md: "center" }}
@@ -274,29 +274,32 @@ export const TimelineItem = ({
       </MotionBox>
 
       {/* Progress Graph - Positioned on OPPOSITE side of the card */}
-      <AnimatePresence>
-        {isHovered && !isDragging && (
-          <motion.div
-            // Centering logic:
-            // If isLeft (Card Left), Graph is Right. Center of Right Column is 75%.
-            // If !isLeft (Card Right), Graph is Left. Center of Left Column is 25%.
-            initial={{ opacity: 0, x: "-50%", y: "calc(-50% + 20px)" }} // Slide up slightly
-            animate={{ opacity: 1, x: "-50%", y: "-50%" }} // Precise Center
-            exit={{ opacity: 0, x: "-50%", y: "calc(-50% + 20px)" }}
-            transition={{ duration: 0.25 }}
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: isLeft ? "78%" : "22%", // Perfectly centered in the opposite column axis
-              // right is not needed if we rely on left for both cases
-              zIndex: 15,
-              display: "block",
-            }}
-          >
-            <ProgressGraph deliverables={item.deliverables} status={item.status} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Hidden on mobile (base) since cards are single-column */}
+      <Box display={{ base: "none", md: "block" }}>
+        <AnimatePresence>
+          {isHovered && !isDragging && (
+            <motion.div
+              // Centering logic:
+              // If isLeft (Card Left), Graph is Right. Center of Right Column is 75%.
+              // If !isLeft (Card Right), Graph is Left. Center of Left Column is 25%.
+              initial={{ opacity: 0, x: "-50%", y: "calc(-50% + 20px)" }} // Slide up slightly
+              animate={{ opacity: 1, x: "-50%", y: "-50%" }} // Precise Center
+              exit={{ opacity: 0, x: "-50%", y: "calc(-50% + 20px)" }}
+              transition={{ duration: 0.25 }}
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: isLeft ? "78%" : "22%", // Perfectly centered in the opposite column axis
+                // right is not needed if we rely on left for both cases
+                zIndex: 15,
+                display: "block",
+              }}
+            >
+              <ProgressGraph deliverables={item.deliverables} status={item.status} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Box>
 
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
