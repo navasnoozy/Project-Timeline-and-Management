@@ -87,7 +87,6 @@ export const SuggestionSection = ({ cardId, roadmapItem }: SuggestionSectionProp
     // TODO: Phase 4 Integration
     // We need the parent component to handle the actual "Add Deliverable" logic because it owns the Roadmap Data.
     // So we should expose `onPromoteSuggestion` prop from this component.
-    console.log("Promoting:", promoteSuggestion, "Data:", formData);
 
     // For now, let's just update the status to "Taken as Key Delivery" to complete the visible flow
     updateMutation.mutate(
