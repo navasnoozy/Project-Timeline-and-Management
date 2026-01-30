@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Box, Card, Flex, Text, Icon, IconButton, Dialog } from "@chakra-ui/react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { Trash2, Pencil } from "lucide-react";
 import { RoadmapItem, Deliverable, TaskStatus } from "./data";
 import { motion, AnimatePresence } from "motion/react";
@@ -25,6 +26,7 @@ interface TimelineItemProps {
   onEditItem: (item: RoadmapItem) => void;
   dragHandleProps?: React.HTMLAttributes<HTMLElement>;
   isDragging?: boolean;
+  forceTooltipOpen?: boolean;
 }
 
 const MotionBox = motion.create(Box);
@@ -46,10 +48,34 @@ const getStatusBorderColor = (status: TaskStatus): string => {
   }
 };
 
-export const TimelineItem = ({ item, index, isLeft, onUpdateDeliverables, onUpdateStatus, isExpanded, onToggleExpand, onDeleteItem, onEditItem, dragHandleProps, isDragging }: TimelineItemProps) => {
+export const TimelineItem = ({
+  item,
+  index,
+  isLeft,
+  onUpdateDeliverables,
+  onUpdateStatus,
+  isExpanded,
+  onToggleExpand,
+  onDeleteItem,
+  onEditItem,
+  dragHandleProps,
+  isDragging,
+  forceTooltipOpen,
+}: TimelineItemProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { data: currentUser } = useCurrentUser();
+  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+
+  // Sync tooltip state with prop (for onboarding hint)
+  useEffect(() => {
+    if (forceTooltipOpen) {
+      setIsTooltipOpen(true);
+    } else if (!isHovered) {
+      // Only close if not currently hovering
+      setIsTooltipOpen(false);
+    }
+  }, [forceTooltipOpen, isHovered]);
 
   const handleDeliverablesUpdate = useCallback(
     (deliverables: Deliverable[]) => {
@@ -87,27 +113,54 @@ export const TimelineItem = ({ item, index, isLeft, onUpdateDeliverables, onUpda
       opacity={isDragging ? 0.3 : 1} // Visual feedback for original item
     >
       {/* Icon Circle on the line - DRAG HANDLE */}
-      <Box
-        {...dragHandleProps}
-        position="absolute"
-        left={{ base: "20px", md: "50%" }}
-        top="0"
-        transform={{ base: "none", md: "translateX(-50%)" }}
-        zIndex={10}
-        bg="white"
-        p={{ base: 1.5, md: 2, "2xl": 2.5 }}
-        borderRadius="full"
-        boxShadow="md"
-        borderWidth="2px"
-        borderColor="purple.400"
-        transition="all 0.2s"
-        _hover={{ ring: "3px", ringColor: "purple.200" }}
-        cursor={isLoggedIn ? "grab" : "default"}
-        _active={{ cursor: isLoggedIn ? "grabbing" : "default" }}
-        style={{ touchAction: "none" }}
+      <Tooltip
+        content={
+          <Flex align="center" gap={1.5}>
+            <Text>✨ Drag to reorder</Text>
+          </Flex>
+        }
+        disabled={!isLoggedIn}
+        showArrow
+        positioning={{ placement: "top" }}
+        openDelay={forceTooltipOpen ? 0 : 300}
+        // Controlled usage for onboarding
+        open={isTooltipOpen}
+        onOpenChange={(e) => setIsTooltipOpen(e.open)}
       >
-        <Icon as={item.icon} fontSize={{ base: "lg", md: "lg", "2xl": "xl" }} color="purple.500" />
-      </Box>
+        <Box
+          {...dragHandleProps}
+          position="absolute"
+          left={{ base: "20px", md: "50%" }}
+          top="0"
+          transform={{ base: "none", md: "translateX(-50%)" }}
+          zIndex={10}
+          bg="white"
+          p={{ base: 1.5, md: 2, "2xl": 2.5 }}
+          borderRadius="full"
+          boxShadow="md"
+          borderWidth="2px"
+          borderColor="purple.400"
+          transition="all 0.2s"
+          _hover={{ ring: "3px", ringColor: "purple.200" }}
+          cursor={isLoggedIn ? "grab" : "default"}
+          _active={{ cursor: isLoggedIn ? "grabbing" : "default" }}
+          // Pulsing glow animation when hint is active
+          animation={forceTooltipOpen ? "pulse 1.5s ease-in-out infinite" : undefined}
+          css={
+            forceTooltipOpen
+              ? {
+                  "@keyframes pulse": {
+                    "0%, 100%": { boxShadow: "0 0 0 0 rgba(139, 92, 246, 0.7)" },
+                    "50%": { boxShadow: "0 0 0 12px rgba(139, 92, 246, 0)" },
+                  },
+                }
+              : undefined
+          }
+          style={{ touchAction: "none" }}
+        >
+          <Icon as={item.icon} fontSize={{ base: "lg", md: "lg", "2xl": "xl" }} color="purple.500" />
+        </Box>
+      </Tooltip>
 
       {/* Content Card - positioned on left or right side */}
       <MotionBox

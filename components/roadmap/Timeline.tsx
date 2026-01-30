@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Box, Flex, Spinner, Center, Text } from "@chakra-ui/react";
 import { TimelineItem } from "./TimelineItem";
 import { AddCardPlaceholder } from "./AddCardPlaceholder";
@@ -67,6 +67,24 @@ export const Timeline = () => {
   // Local state for UI Only
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [showHint, setShowHint] = useState(false); // Onboarding hint state for first item
+
+  // Trigger onboarding hint on mount (only once per session)
+  useEffect(() => {
+    const HINT_KEY = "roadmap_drag_hint_shown";
+    if (typeof window !== "undefined" && !sessionStorage.getItem(HINT_KEY)) {
+      const startTimer = setTimeout(() => setShowHint(true), 1200); // Show after 1.2s
+      const endTimer = setTimeout(() => {
+        setShowHint(false);
+        sessionStorage.setItem(HINT_KEY, "true");
+      }, 5000); // Hide after 5s total
+
+      return () => {
+        clearTimeout(startTimer);
+        clearTimeout(endTimer);
+      };
+    }
+  }, []);
 
   // Unified Modal State
   const [modalState, setModalState] = useState<ModalState>({
@@ -217,6 +235,7 @@ export const Timeline = () => {
                   onToggleExpand={() => handleToggleExpand(item.id)}
                   onDeleteItem={handleDeleteItem}
                   onEditItem={openEditModal}
+                  forceTooltipOpen={index === 0 && showHint}
                 />
               ))}
             </SortableContext>
