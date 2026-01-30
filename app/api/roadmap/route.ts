@@ -56,13 +56,18 @@ export async function POST(req: Request) {
     // In a real app we might rely on _id, but our frontend expects 'id' string.
     // Let's generate one or use the one provided if valid (but schema doesn't have id).
     // We'll generate a unique ID here.
+    // Find the current highest order
+    const lastItem = await RoadmapItem.findOne().sort({ order: -1 });
+    const newOrder = lastItem ? (lastItem.order ?? 0) + 1 : 0;
+
     const newItem = await RoadmapItem.create({
       id: `card-${Date.now()}`,
       title: validatedData.title,
       description: validatedData.description,
       status: validatedData.status,
-      iconName: "LuRocket", // Default icon for new items
+      iconName: validatedData.iconName, // Use validated icon name
       deliverables: [], // Start empty
+      order: newOrder,
     });
 
     return NextResponse.json(newItem, { status: 201 });
